@@ -49,6 +49,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/metrics/influxdb"
+	"github.com/ethereum/go-ethereum/metrics/prometheus"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/discv5"
@@ -620,6 +621,14 @@ var (
 		Name:  "vm.evm",
 		Usage: "External EVM configuration (default = built-in interpreter)",
 		Value: "",
+	MetricsEnablePrometheusFlag = cli.BoolFlag{
+		Name:  "metrics.prometheus",
+		Usage: "Enable prometheus HTTP server",
+	}
+	MetricsPrometheusAddrFlag = cli.StringFlag{
+		Name:  "metrics.prometheus.addr",
+		Usage: "Prometheus server listening address",
+		Value: "localhost:9455",
 	}
 )
 
@@ -1320,6 +1329,9 @@ func SetupMetrics(ctx *cli.Context) {
 			username     = ctx.GlobalString(MetricsInfluxDBUsernameFlag.Name)
 			password     = ctx.GlobalString(MetricsInfluxDBPasswordFlag.Name)
 			hosttag      = ctx.GlobalString(MetricsInfluxDBHostTagFlag.Name)
+
+			enablePrometheus = ctx.GlobalBool(MetricsEnablePrometheusFlag.Name)
+			prometheusAddr   = ctx.GlobalString(MetricsPrometheusAddrFlag.Name)
 		)
 
 		if enableExport {
@@ -1327,6 +1339,10 @@ func SetupMetrics(ctx *cli.Context) {
 			go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, 10*time.Second, endpoint, database, username, password, "geth.", map[string]string{
 				"host": hosttag,
 			})
+		}
+
+		if enablePrometheus {
+			go prometheus.Run(metrics.DefaultRegistry, prometheusAddr)
 		}
 	}
 }
