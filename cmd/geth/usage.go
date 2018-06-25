@@ -228,6 +228,8 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MetricsInfluxDBUsernameFlag,
 			utils.MetricsInfluxDBPasswordFlag,
 			utils.MetricsInfluxDBHostTagFlag,
+			utils.MetricsEnablePrometheusFlag,
+			utils.MetricsPrometheusAddrFlag,
 		},
 	},
 	{

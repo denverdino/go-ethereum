@@ -163,6 +163,8 @@ var (
 		utils.MetricsInfluxDBUsernameFlag,
 		utils.MetricsInfluxDBPasswordFlag,
 		utils.MetricsInfluxDBHostTagFlag,
+		utils.MetricsEnablePrometheusFlag,
+		utils.MetricsPrometheusAddrFlag,
 	}
 )
 
@@ -240,6 +242,8 @@ func init() {
 		// Start system runtime metrics collection
 		go metrics.CollectProcessMetrics(3 * time.Second)
 
+		utils.SetupMetrics(ctx)
+		utils.SetupNetwork(ctx)
 		return nil
 	}
 
