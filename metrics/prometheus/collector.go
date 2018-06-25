@@ -18,7 +18,7 @@ var (
 
 	countersHeader       = []byte("# HELP counters is set of geth counters\n# TYPE counters gauage\n")
 	gauagesHeader        = []byte("# HELP gauages is set of geth gauages\n# TYPE gauages gauage\n")
-	meterHeader          = []byte("# HELP meters is set of geth meters\n# TYPE meters gauage\n")
+	meterHeader          = []byte("# HELP meters is set of geth meters\n# TYPE meters counter\n")
 	histogramHeader      = []byte("# HELP histograms is set of geth histograms\n# TYPE histograms summary\n")
 	timerHeader          = []byte("# HELP timers is set of geth timers\n# TYPE timers summary\n")
 	resettingTimerHeader = []byte("# HELP resetting_timers is set of geth resetting timers\n# TYPE resetting_timers summary\n")
@@ -120,12 +120,6 @@ func (c *collector) addGuageFloat64(name string, m metrics.GaugeFloat64) {
 func (c *collector) addHistogram(name string, m metrics.Histogram) {
 	ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999, 0.9999})
 	writeMetric(c.histograms, histogramsKey, name, "count", m.Count())
-	writeMetric(c.histograms, histogramsKey, name, "count", m.Count())
-	writeMetric(c.histograms, histogramsKey, name, "max", m.Max())
-	writeMetric(c.histograms, histogramsKey, name, "mean", m.Mean())
-	writeMetric(c.histograms, histogramsKey, name, "min", m.Min())
-	writeMetric(c.histograms, histogramsKey, name, "stddev", m.StdDev())
-	writeMetric(c.histograms, histogramsKey, name, "variance", m.Variance())
 	writeMetric(c.histograms, histogramsKey, name, "p50", ps[0])
 	writeMetric(c.histograms, histogramsKey, name, "p75", ps[1])
 	writeMetric(c.histograms, histogramsKey, name, "p95", ps[2])
@@ -136,30 +130,17 @@ func (c *collector) addHistogram(name string, m metrics.Histogram) {
 
 func (c *collector) addMeter(name string, m metrics.Meter) {
 	writeMetric(c.meters, metersKey, name, "count", m.Count())
-	writeMetric(c.meters, metersKey, name, "m1", m.Rate1())
-	writeMetric(c.meters, metersKey, name, "m5", m.Rate5())
-	writeMetric(c.meters, metersKey, name, "m15", m.Rate15())
-	writeMetric(c.meters, metersKey, name, "mean", m.RateMean())
 }
 
 func (c *collector) addTimer(name string, m metrics.Timer) {
 	ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999, 0.9999})
 	writeMetric(c.timers, timersKey, name, "count", m.Count())
-	writeMetric(c.timers, timersKey, name, "max", m.Max())
-	writeMetric(c.timers, timersKey, name, "mean", m.Mean())
-	writeMetric(c.timers, timersKey, name, "min", m.Min())
-	writeMetric(c.timers, timersKey, name, "stddev", m.StdDev())
-	writeMetric(c.timers, timersKey, name, "variance", m.Variance())
 	writeMetric(c.timers, timersKey, name, "p50", ps[0])
 	writeMetric(c.timers, timersKey, name, "p75", ps[1])
 	writeMetric(c.timers, timersKey, name, "p95", ps[2])
 	writeMetric(c.timers, timersKey, name, "p99", ps[3])
 	writeMetric(c.timers, timersKey, name, "p999", ps[4])
 	writeMetric(c.timers, timersKey, name, "p9999", ps[5])
-	writeMetric(c.timers, timersKey, name, "m1", m.Rate1())
-	writeMetric(c.timers, timersKey, name, "m5", m.Rate5())
-	writeMetric(c.timers, timersKey, name, "m15", m.Rate15())
-	writeMetric(c.timers, timersKey, name, "meanrate", m.RateMean())
 }
 
 func (c *collector) addResettingTimer(name string, m metrics.ResettingTimer) {
@@ -169,9 +150,6 @@ func (c *collector) addResettingTimer(name string, m metrics.ResettingTimer) {
 	ps := m.Percentiles([]float64{50, 95, 99})
 	val := m.Values()
 	writeMetric(c.resettingTimers, resettingTimersKey, name, "count", len(val))
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "max", val[len(val)-1])
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "mean", m.Mean())
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "min", val[0])
 	writeMetric(c.resettingTimers, resettingTimersKey, name, "p50", ps[0])
 	writeMetric(c.resettingTimers, resettingTimersKey, name, "p95", ps[1])
 	writeMetric(c.resettingTimers, resettingTimersKey, name, "p99", ps[2])
