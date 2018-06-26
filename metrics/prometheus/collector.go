@@ -23,7 +23,9 @@ var (
 	timerHeader          = []byte("# HELP timers is set of geth timers\n# TYPE timers summary\n")
 	resettingTimerHeader = []byte("# HELP resetting_timers is set of geth resetting timers\n# TYPE resetting_timers summary\n")
 
-	tagsValueTemplate = "{name=\"%s\",aggr=\"%s\"} %v\n"
+	counterSuffix           = []byte("_count")
+	nameTagTemplate         = "{name=\"%s\"} %v\n"
+	nameQuantileTagTemplate = "{name=\"%s\",quantile=\"%s\"} %v\n"
 )
 
 var bufPool sync.Pool
@@ -106,41 +108,41 @@ func (c *collector) result() *bytes.Buffer {
 }
 
 func (c *collector) addCounter(name string, m metrics.Counter) {
-	writeMetric(c.counters, countersKey, name, "value", m.Count())
+	writeGuageCounter(c.counters, countersKey, name, m.Count())
 }
 
 func (c *collector) addGuage(name string, m metrics.Gauge) {
-	writeMetric(c.gauages, gauagesKey, name, "value", m.Value())
+	writeGuageCounter(c.gauages, gauagesKey, name, m.Value())
 }
 
 func (c *collector) addGuageFloat64(name string, m metrics.GaugeFloat64) {
-	writeMetric(c.gauages, gauagesKey, name, "value", m.Value())
+	writeGuageCounter(c.gauages, gauagesKey, name, m.Value())
 }
 
 func (c *collector) addHistogram(name string, m metrics.Histogram) {
 	ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999, 0.9999})
-	writeMetric(c.histograms, histogramsKey, name, "count", m.Count())
-	writeMetric(c.histograms, histogramsKey, name, "p50", ps[0])
-	writeMetric(c.histograms, histogramsKey, name, "p75", ps[1])
-	writeMetric(c.histograms, histogramsKey, name, "p95", ps[2])
-	writeMetric(c.histograms, histogramsKey, name, "p99", ps[3])
-	writeMetric(c.histograms, histogramsKey, name, "p999", ps[4])
-	writeMetric(c.histograms, histogramsKey, name, "p9999", ps[5])
+	writeSummaryCounter(c.histograms, histogramsKey, name, m.Count())
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.5", ps[0])
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.75", ps[1])
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.95", ps[2])
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.99", ps[3])
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.999", ps[4])
+	writeSummaryPercentile(c.histograms, histogramsKey, name, "0.9999", ps[5])
 }
 
 func (c *collector) addMeter(name string, m metrics.Meter) {
-	writeMetric(c.meters, metersKey, name, "count", m.Count())
+	writeGuageCounter(c.meters, metersKey, name, m.Count())
 }
 
 func (c *collector) addTimer(name string, m metrics.Timer) {
 	ps := m.Percentiles([]float64{0.5, 0.75, 0.95, 0.99, 0.999, 0.9999})
-	writeMetric(c.timers, timersKey, name, "count", m.Count())
-	writeMetric(c.timers, timersKey, name, "p50", ps[0])
-	writeMetric(c.timers, timersKey, name, "p75", ps[1])
-	writeMetric(c.timers, timersKey, name, "p95", ps[2])
-	writeMetric(c.timers, timersKey, name, "p99", ps[3])
-	writeMetric(c.timers, timersKey, name, "p999", ps[4])
-	writeMetric(c.timers, timersKey, name, "p9999", ps[5])
+	writeSummaryCounter(c.timers, timersKey, name, m.Count())
+	writeSummaryPercentile(c.timers, timersKey, name, "0.50", ps[0])
+	writeSummaryPercentile(c.timers, timersKey, name, "0.75", ps[1])
+	writeSummaryPercentile(c.timers, timersKey, name, "0.95", ps[2])
+	writeSummaryPercentile(c.timers, timersKey, name, "0.99", ps[3])
+	writeSummaryPercentile(c.timers, timersKey, name, "0.999", ps[4])
+	writeSummaryPercentile(c.timers, timersKey, name, "0.9999", ps[5])
 }
 
 func (c *collector) addResettingTimer(name string, m metrics.ResettingTimer) {
@@ -149,14 +151,23 @@ func (c *collector) addResettingTimer(name string, m metrics.ResettingTimer) {
 	}
 	ps := m.Percentiles([]float64{50, 95, 99})
 	val := m.Values()
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "count", len(val))
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "p50", ps[0])
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "p95", ps[1])
-	writeMetric(c.resettingTimers, resettingTimersKey, name, "p99", ps[2])
-
+	writeSummaryCounter(c.resettingTimers, resettingTimersKey, name, len(val))
+	writeSummaryPercentile(c.resettingTimers, resettingTimersKey, name, "0.50", ps[0])
+	writeSummaryPercentile(c.resettingTimers, resettingTimersKey, name, "0.95", ps[1])
+	writeSummaryPercentile(c.resettingTimers, resettingTimersKey, name, "0.99", ps[2])
 }
 
-func writeMetric(buf *bytes.Buffer, key []byte, name, aggr string, value interface{}) {
+func writeGuageCounter(buf *bytes.Buffer, key []byte, name string, value interface{}) {
 	buf.Write(key)
-	buf.WriteString(fmt.Sprintf(tagsValueTemplate, name, aggr, value))
+	buf.WriteString(fmt.Sprintf(nameTagTemplate, name, value))
+}
+
+func writeSummaryCounter(buf *bytes.Buffer, key []byte, name string, value interface{}) {
+	buf.Write(append(key, counterSuffix...))
+	buf.WriteString(fmt.Sprintf(nameTagTemplate, name, value))
+}
+
+func writeSummaryPercentile(buf *bytes.Buffer, key []byte, name, p string, value interface{}) {
+	buf.Write(key)
+	buf.WriteString(fmt.Sprintf(nameQuantileTagTemplate, name, p, value))
 }

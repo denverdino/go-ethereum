@@ -242,7 +242,6 @@ func init() {
 		// Start system runtime metrics collection
 		go metrics.CollectProcessMetrics(3 * time.Second)
 
-		utils.SetupMetrics(ctx)
 		utils.SetupNetwork(ctx)
 		return nil
 	}
