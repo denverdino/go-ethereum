@@ -10,14 +10,14 @@ import (
 
 var (
 	countersKey        = []byte("counters")
-	gauagesKey         = []byte("gauages")
+	gaugesKey          = []byte("gauges")
 	metersKey          = []byte("meters")
 	histogramsKey      = []byte("histograms")
 	timersKey          = []byte("timers")
 	resettingTimersKey = []byte("resettingTimers")
 
-	countersHeader       = []byte("# HELP counters is set of geth counters\n# TYPE counters gauage\n")
-	gauagesHeader        = []byte("# HELP gauages is set of geth gauages\n# TYPE gauages gauage\n")
+	countersHeader       = []byte("# HELP counters is set of geth counters\n# TYPE counters gauge\n")
+	gaugesHeader         = []byte("# HELP gauges is set of geth gauges\n# TYPE gauges gauge\n")
 	meterHeader          = []byte("# HELP meters is set of geth meters\n# TYPE meters counter\n")
 	histogramHeader      = []byte("# HELP histograms is set of geth histograms\n# TYPE histograms summary\n")
 	timerHeader          = []byte("# HELP timers is set of geth timers\n# TYPE timers summary\n")
@@ -45,7 +45,7 @@ func giveBuf(buf *bytes.Buffer) {
 
 type collector struct {
 	counters        *bytes.Buffer
-	gauages         *bytes.Buffer
+	gauges          *bytes.Buffer
 	histograms      *bytes.Buffer
 	meters          *bytes.Buffer
 	timers          *bytes.Buffer
@@ -55,7 +55,7 @@ type collector struct {
 func newCollector() *collector {
 	return &collector{
 		counters:        getBuf(),
-		gauages:         getBuf(),
+		gauges:          getBuf(),
 		histograms:      getBuf(),
 		meters:          getBuf(),
 		timers:          getBuf(),
@@ -65,7 +65,7 @@ func newCollector() *collector {
 
 func (c *collector) reset() {
 	giveBuf(c.counters)
-	giveBuf(c.gauages)
+	giveBuf(c.gauges)
 	giveBuf(c.histograms)
 	giveBuf(c.meters)
 	giveBuf(c.timers)
@@ -79,9 +79,9 @@ func (c *collector) result() *bytes.Buffer {
 		buf.Write(c.counters.Bytes())
 	}
 
-	if c.gauages.Len() > 0 {
-		buf.Write(gauagesHeader)
-		buf.Write(c.gauages.Bytes())
+	if c.gauges.Len() > 0 {
+		buf.Write(gaugesHeader)
+		buf.Write(c.gauges.Bytes())
 	}
 
 	if c.meters.Len() > 0 {
@@ -112,11 +112,11 @@ func (c *collector) addCounter(name string, m metrics.Counter) {
 }
 
 func (c *collector) addGuage(name string, m metrics.Gauge) {
-	writeGuageCounter(c.gauages, gauagesKey, name, m.Value())
+	writeGuageCounter(c.gauges, gaugesKey, name, m.Value())
 }
 
 func (c *collector) addGuageFloat64(name string, m metrics.GaugeFloat64) {
-	writeGuageCounter(c.gauages, gauagesKey, name, m.Value())
+	writeGuageCounter(c.gauges, gaugesKey, name, m.Value())
 }
 
 func (c *collector) addHistogram(name string, m metrics.Histogram) {

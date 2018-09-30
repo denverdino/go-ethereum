@@ -621,6 +621,7 @@ var (
 		Name:  "vm.evm",
 		Usage: "External EVM configuration (default = built-in interpreter)",
 		Value: "",
+	}
 	MetricsEnablePrometheusFlag = cli.BoolFlag{
 		Name:  "metrics.prometheus",
 		Usage: "Enable prometheus HTTP server",
